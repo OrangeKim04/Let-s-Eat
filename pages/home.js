@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { auth } from '../firebaseConfig'; // Import your Firebase config
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Home({ navigation }) {
   const [username, setUsername] = useState('');
@@ -8,34 +10,33 @@ export default function Home({ navigation }) {
   const [fontsLoaded] = useFonts({
     tokki: require("../assets/Fonts/HSSantokki-Regular.ttf"),
     jeju: require("../assets/Fonts/EF_jejudoldam(TTF).ttf"),
-});
+  });
 
-// 회원의 아이디와 비밀번호를 db에서 받아와서 비교
-  const handleLogin = () => {
-    if(username === ''){
-        Alert.alert('아이디를 입력하세요.');
-        return false;
+  const handleLogin = async () => {
+    if (username === '') {
+      Alert.alert('아이디를 입력하세요.');
+      return false;
     }
-    if(password === ''){
-        Alert.alert('비밀번호를 입력하세요.');
-        return false;
+    if (password === '') {
+      Alert.alert('비밀번호를 입력하세요.');
+      return false;
     }
-    return true;
+
+    try {
+      await signInWithEmailAndPassword(auth, username, password);
+      navigation.navigate("Main");
+    } catch (error) {
+      Alert.alert('로그인 실패', error.message);
+    }
   };
 
   return (
     <View style={styles.container}>
-        <View style={styles.textContainer}>
-            <Text style={styles.emoji}>
-                {String.fromCodePoint(0x1F374)}
-            </Text>
-            <Text style={styles.text}>
-                밥먹자
-            </Text>
-            <Text style={styles.emoji}>
-                {String.fromCodePoint(0x1F374)}
-            </Text>
-        </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.emoji}>{String.fromCodePoint(0x1F374)}</Text>
+        <Text style={styles.text}>밥먹자</Text>
+        <Text style={styles.emoji}>{String.fromCodePoint(0x1F374)}</Text>
+      </View>
 
       <View style={styles.form}>
         <TextInput
@@ -45,10 +46,9 @@ export default function Home({ navigation }) {
           value={username}
           onChangeText={setUsername}
           autoComplete='off'
-          textContentType="oneTimeCode"
+          textContentType="emailAddress"
         />
         <TextInput
-          type="password"
           style={[styles.input, styles.passwordInput]}
           placeholder="비밀번호"
           placeholderTextColor="#999"
@@ -56,21 +56,13 @@ export default function Home({ navigation }) {
           value={password}
           onChangeText={setPassword}
           autoComplete='off'
-          textContentType="oneTimeCode"
+          textContentType="password"
         />
 
-          {/* 로그인 버튼을 눌렀을 때 Main 페이지로 이동 */}
-        <TouchableOpacity style={styles.button} 
-          onPress= {async() => {
-            if(await handleLogin()){
-              navigation.navigate("Main");
-            }
-          }}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>로그인</Text>
         </TouchableOpacity>
 
-        {/* 회원가입 버튼을 눌렀을 때 SignUp 페이지로 이동 */}
         <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.signupButtonText}>회원가입</Text>
         </TouchableOpacity>

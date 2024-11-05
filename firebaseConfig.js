@@ -1,6 +1,8 @@
 // firebaseConfig.js
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage 임포트
 
 const firebaseConfig = {
     apiKey: "AIzaSyDXW94ZM9llBheEl95JWQlaM_dSaQkBnvU",
@@ -12,6 +14,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage) // AsyncStorage를 사용하여 인증 상태 지속
+});
+const db = getFirestore(app); // Firestore 초기화
 
-export { auth };
+export { auth, db }; // db도 export
