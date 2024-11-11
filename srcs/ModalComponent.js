@@ -70,6 +70,7 @@ const ModalComponent = ({ modalVisible, setModalVisible, onSelectUniversity }) =
                         <TouchableOpacity 
                             style={styles.listBox}
                             onPress={() => onSelectUniversity(univ.schoolName)}
+                            key={index}
                         >
                             <Text key={index} style={styles.universityText}>
                                 {univ.schoolName}
