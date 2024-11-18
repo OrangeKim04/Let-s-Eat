@@ -1,132 +1,143 @@
 import React, { useState } from 'react';
-import { Button, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 import ModalComponent from '../srcs/ModalComponent';
+import { auth } from '../firebaseConfig'; // Firebase 설정 파일에서 auth 가져오기
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-export default function SignUp() {
-  const [username, setUsername] = useState('');
+export default function SignUp({ navigation }) {
   const [password, setPassword] = useState('');
   const [repassword, setRePassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [university, setUniversity] = useState('');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [modalVisible, setModalVisible] = useState(false); // 모달 가시성 상태
-
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleSendVerificationCode = () => {
-    if (university === '' || email === '') {
-      Alert.alert('오류', '대학교와 이메일을 모두 입력해주세요.');
-      return;
+    if (!university || !email) {
+      return Alert.alert('오류', '대학교와 이메일을 모두 입력해주세요.');
     }
-    // 이메일 인증번호 전송 로직 (서버 연동 필요)
     Alert.alert('인증번호 전송', `인증번호가 ${email}@${university}로 전송되었습니다.`);
   };
 
-  const handleSignUp = () => {
-    // 회원가입 로직 (서버 연동 필요)
-    if (verificationCode !== '1234') { // 예시로 인증번호 1234를 올바른 값으로 가정
-      Alert.alert('오류', '인증번호가 올바르지 않습니다.');
-    } else if(password !== repassword){
-      Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
-    }else{
-        Alert.alert('회원가입 성공', '회원가입이 완료되었습니다.');
+  const handleSignUp = async () => {
+    if (verificationCode !== '1234') {
+      return Alert.alert('오류', '인증번호가 올바르지 않습니다.');
+    }
+    if (password !== repassword) {
+      return Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      Alert.alert('회원가입 성공', '회원가입이 완료되었습니다.');
+      navigation.navigate('MyPage', {email, nickname});
+      navigation.navigate('Home');
+    } catch (error) {
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          Alert.alert('회원가입 실패', '이미 사용 중인 이메일 주소입니다.');
+          break;
+        case 'auth/invalid-email':
+          Alert.alert('회원가입 실패', '유효하지 않은 이메일 형식입니다.');
+          break;
+        case 'auth/weak-password':
+          Alert.alert('회원가입 실패', '비밀번호가 너무 약합니다. 최소 6자 이상 입력해주세요.');
+          break;
+        case 'auth/operation-not-allowed':
+          Alert.alert('회원가입 실패', '이메일/비밀번호 계정이 활성화되어 있지 않습니다.');
+          break;
+        case 'auth/network-request-failed':
+          Alert.alert('회원가입 실패', '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+          break;
+        default:
+          Alert.alert('회원가입 실패', '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          console.error('회원가입 오류:', error);
+          break;
+      }
     }
   };
 
-  // 선택된 대학으로 setUniversity가 됨
-  const handleSelectUniversity = (selectUniversity) => {
-    setUniversity(selectUniversity);
+  const handleSelectUniversity = (selectedUniversity) => {
+    setUniversity(selectedUniversity);
     setModalVisible(false);
-  }
+  };
 
   return (
     <View style={styles.container}>
+    
+      <TextInput
+        style={styles.input}
+        placeholder="비밀번호"
+        secureTextEntry={true}
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        textContentType="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="비밀번호 재입력"
+        secureTextEntry={true}
+        value={repassword}
+        onChangeText={setRePassword}
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        textContentType="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="닉네임"
+        value={nickname}
+        onChangeText={setNickname}
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        textContentType="none"
+      />
 
-      {/* 아이디 입력 */}
+      <TouchableOpacity style={styles.pickerContainer} onPress={() => setModalVisible(true)}>
+        <Text style={university ? styles.universityText : styles.universityPlaceholder}>
+          {university || '대학교 선택'}
+        </Text>
+      </TouchableOpacity>
+      <ModalComponent modalVisible={modalVisible} setModalVisible={setModalVisible} onSelectUniversity={handleSelectUniversity} />
+
+      <View style={styles.emailContainer}>
         <TextInput
-            style={styles.input}
-            placeholder="아이디"
-            value={username}
-            onChangeText={setUsername}
+          style={styles.emailInput}
+          placeholder="이메일 입력"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoComplete="off"
+          autoCorrect={false}
+          keyboardType="email-address"
+          textContentType="none"
         />
+      </View>
 
-      {/* 비밀번호 입력 */}
-        <TextInput
-            style={styles.input}
-            placeholder="비밀번호"
-            secureTextEntry={true}
-            value={password}
-            onChangeText={setPassword}
-        />
+      <TouchableOpacity style={styles.button} onPress={handleSendVerificationCode}>
+        <Text style={styles.buttonText}>인증번호 전송</Text>
+      </TouchableOpacity>
 
-        <TextInput
-            style={styles.input}
-            placeholder="비밀번호 재입력"
-            secureTextEntry={true}
-            value={repassword}
-            onChangeText={setRePassword}
-        />
-
-      {/* 닉네임 입력 */}
-        <TextInput
-            style={styles.input}
-            placeholder="닉네임"
-            value={nickname}
-            onChangeText={setNickname}
-        />
-
-        {/* 대학교 선택 */}
-        <TouchableOpacity style={styles.pickerContainer} onPress={() => setModalVisible(true)}>
-            {university ? (
-                <Text style={{ color: 'black', fontSize: 16 }}>{university}</Text>
-            ) : (
-                <Text style={{ color: '#ccc', fontSize: 16 }}>대학교 선택</Text>
-            )}
-        </TouchableOpacity>
-
-        {/* modalVisible과 setModalVisible을 자식에게 props로 전달 */}
-        <ModalComponent 
-            modalVisible={modalVisible} 
-            setModalVisible={setModalVisible} 
-            onSelectUniversity={handleSelectUniversity}
-        />
-
-
-      {/* 대학교 이메일 입력 */}
-        <View style={styles.emailContainer}>
-            <TextInput
-            style={styles.emailInput}
-            placeholder="이메일 입력"
-            value={email}
-            onChangeText={setEmail}
-            />
-        </View>
-
-      {/* 인증번호 전송 버튼 */}
-        <TouchableOpacity style={styles.button} onPress={handleSendVerificationCode}>
-            <Text style={styles.buttonText}>인증번호 전송</Text>
-        </TouchableOpacity>
-
-      {/* 인증번호 입력 */}
-        <TextInput
-            style={styles.input}
-            placeholder="이메일로 받은 인증번호 입력"
-            value={verificationCode}
-            onChangeText={setVerificationCode}
-        />
-
-      {/* 회원가입 버튼 */}
-        <TouchableOpacity 
-            style={[styles.button, { marginTop: 50 }]} 
-            onPress={async () => {
-            await handleSignUp(); // 비동기 회원가입 처리
-            navigation.navigate('Home'); // 처리 후 홈으로 이동
-            }}
-        >
-            <Text style={styles.buttonText}>회원가입</Text>
-        </TouchableOpacity>
+      <TextInput
+        style={styles.input}
+        placeholder="인증번호 입력"
+        value={verificationCode}
+        onChangeText={setVerificationCode}
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        textContentType="none"
+      />
+      <TouchableOpacity style={[styles.button, { marginTop: 50 }]} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>회원가입</Text>
+      </TouchableOpacity>
     </View>
-    );
+  );
 }
 
 const styles = StyleSheet.create({
