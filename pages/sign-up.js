@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import ModalComponent from '../srcs/ModalComponent';
-import { auth } from '../firebaseConfig'; // Firebase 설정 파일에서 auth 가져오기
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 
 export default function SignUp({ navigation }) {
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [repassword, setRePassword] = useState('');
   const [nickname, setNickname] = useState('');
@@ -13,99 +12,97 @@ export default function SignUp({ navigation }) {
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
 
-  const handleSendVerificationCode = () => {
-    if (university === '' || email === '') {
-      Alert.alert('오류', '대학교와 이메일을 모두 입력해주세요.');
-      return;
+  const handleSendVerificationCode = async () => {
+    if (!university || !email) {
+      return Alert.alert('오류', '대학교와 이메일을 모두 입력해주세요.');
     }
-    Alert.alert('인증번호 전송', `인증번호가 ${email}@${university}로 전송되었습니다.`);
-  };
+    if (password !== repassword) {
+      return Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
+    }
 
-  const handleSignUp = async () => {
-    if (verificationCode !== '1234') {
-      Alert.alert('오류', '인증번호가 올바르지 않습니다.');
-    } else if (password !== repassword) {
-      Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
-    } else {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        Alert.alert('회원가입 성공', '회원가입이 완료되었습니다.');
-        navigation.navigate('Home'); // 회원가입 후 홈으로 이동
-      } catch (error) {
+    try {
+      // 사용자 계정 생성
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // 인증 이메일 전송
+      const user = userCredential.user;
+      await sendEmailVerification(user);
+      
+      Alert.alert('인증 이메일이 전송되었습니다.');
+      setIsEmailSent(true); // 이메일 전송 상태 업데이트
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        Alert.alert('회원가입 실패', '이미 사용 중인 이메일 주소입니다.');
+      } else {
         Alert.alert('회원가입 실패', error.message);
       }
     }
   };
 
-  const handleSelectUniversity = (selectUniversity) => {
-    setUniversity(selectUniversity);
+  const handleSignUp = () => {
+    if (!isEmailSent) {
+      return Alert.alert('오류', '먼저 인증번호를 요청해주세요.');
+    }
+    if (verificationCode !== '1234') {
+      return Alert.alert('오류', '인증번호가 올바르지 않습니다.');
+    }
+    navigation.navigate('Home');
+  };
+
+  const handleSelectUniversity = (selectedUniversity) => {
+    setUniversity(selectedUniversity);
     setModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => setModalVisible(true)}>
+        <Text>{university || '대학교 선택'}</Text>
+      </TouchableOpacity>
+
       <TextInput
         style={styles.input}
-        placeholder="아이디"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="이메일"
+        value={email}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
-        secureTextEntry={true}
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
       <TextInput
         style={styles.input}
-        placeholder="비밀번호 재입력"
-        secureTextEntry={true}
+        placeholder="비밀번호 확인"
+        secureTextEntry
         value={repassword}
         onChangeText={setRePassword}
       />
       <TextInput
         style={styles.input}
-        placeholder="닉네임"
-        value={nickname}
-        onChangeText={setNickname}
+        placeholder="인증번호"
+        value={verificationCode}
+        onChangeText={setVerificationCode}
+        editable={isEmailSent}
       />
-      <TouchableOpacity style={styles.pickerContainer} onPress={() => setModalVisible(true)}>
-        {university ? (
-          <Text style={{ color: 'black', fontSize: 16 }}>{university}</Text>
-        ) : (
-          <Text style={{ color: '#ccc', fontSize: 16 }}>대학교 선택</Text>
-        )}
+
+      <TouchableOpacity style={styles.button} onPress={handleSendVerificationCode}>
+        <Text style={styles.buttonText}>인증번호 요청</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>회원가입</Text>
+      </TouchableOpacity>
+
       <ModalComponent 
         modalVisible={modalVisible} 
         setModalVisible={setModalVisible} 
-        onSelectUniversity={handleSelectUniversity}
+        onSelectUniversity={handleSelectUniversity} 
       />
-      <View style={styles.emailContainer}>
-        <TextInput
-          style={styles.emailInput}
-          placeholder="이메일 입력"
-          value={email}
-          onChangeText={setEmail}
-        />
-      </View>
-      <TouchableOpacity style={styles.button} onPress={handleSendVerificationCode}>
-        <Text style={styles.buttonText}>인증번호 전송</Text>
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="이메일로 받은 인증번호 입력"
-        value={verificationCode}
-        onChangeText={setVerificationCode}
-      />
-      <TouchableOpacity 
-        style={[styles.button, { marginTop: 50 }]} 
-        onPress={handleSignUp}
-      >
-        <Text style={styles.buttonText}>회원가입</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -126,31 +123,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 20,
     fontSize: 16,
-  },
-  pickerContainer: {
-    width: '100%',
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
-    justifyContent: 'center',
-  },
-  emailContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '90%',
-    height: 50,
-  },
-  emailInput: {
-    flex: 3,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    height: '80%',
-    marginBottom: 20,
-    paddingLeft: 20,
   },
   button: {
     width: '100%',

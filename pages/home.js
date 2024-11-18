@@ -1,32 +1,56 @@
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { auth } from '../firebaseConfig'; // Import your Firebase config
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { auth } from '../firebaseConfig'; // Firebase 설정 파일에서 auth 가져오기
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Home({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
   const [fontsLoaded] = useFonts({
     tokki: require("../assets/Fonts/HSSantokki-Regular.ttf"),
     jeju: require("../assets/Fonts/EF_jejudoldam(TTF).ttf"),
   });
 
+  // 폰트가 로드되지 않았으면 로딩 스피너를 표시
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+  // Firebase 로그인 처리 함수
   const handleLogin = async () => {
     if (username === '') {
       Alert.alert('아이디를 입력하세요.');
-      return false;
+      return;
     }
     if (password === '') {
       Alert.alert('비밀번호를 입력하세요.');
-      return false;
+      return;
     }
-
     try {
       await signInWithEmailAndPassword(auth, username, password);
-      navigation.navigate("Main");
+      console.log('로그인 성공');
+      navigation.navigate('MyPage', { email: username });
+      navigation.replace("Main"); // 로그인 성공 시 Main 페이지로 이동
     } catch (error) {
-      Alert.alert('로그인 실패', error.message);
+      const errorMessage = getFirebaseErrorMessage(error.code);
+      Alert.alert('로그인 실패', errorMessage);
+      console.log('로그인 실패', error);
+    }
+  };
+
+  // Firebase 에러 메시지 변환 함수
+  const getFirebaseErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return '유효하지 않은 이메일 형식입니다.';
+      case 'auth/user-not-found':
+        return '존재하지 않는 사용자입니다.';
+      case 'auth/wrong-password':
+        return '잘못된 비밀번호입니다.';
+      default:
+        return '로그인에 실패했습니다. 다시 시도해주세요.';
     }
   };
 
@@ -42,27 +66,21 @@ export default function Home({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="아이디"
-          placeholderTextColor="#999"
           value={username}
           onChangeText={setUsername}
-          autoComplete='off'
-          textContentType="emailAddress"
         />
         <TextInput
           style={[styles.input, styles.passwordInput]}
           placeholder="비밀번호"
-          placeholderTextColor="#999"
-          secureTextEntry={true}
+          secureTextEntry
           value={password}
           onChangeText={setPassword}
-          autoComplete='off'
-          textContentType="password"
         />
-
+        {/* 로그인 버튼 */}
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>로그인</Text>
         </TouchableOpacity>
-
+        {/* 회원가입 버튼 */}
         <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.signupButtonText}>회원가입</Text>
         </TouchableOpacity>
@@ -143,4 +161,3 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
-
