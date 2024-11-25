@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { TouchableOpacity } from 'react-native';
 
 export default function CreateRoom({ route, navigation }) {
   const { addRoom } = route.params;
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [people, setPeople] = useState(1);
   const [location, setLocation] = useState('');
   const [menu, setMenu] = useState('');
@@ -22,9 +22,13 @@ export default function CreateRoom({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-
-        <Text style={styles.label}>방 제목</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="방 제목 입력" />
+      <Text style={styles.label}>방 제목</Text>
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="방 제목 입력"
+      />
 
       <Text style={styles.label}>인원: {people}명</Text>
       <Slider
@@ -34,19 +38,34 @@ export default function CreateRoom({ route, navigation }) {
         step={1}
         value={people}
         onValueChange={setPeople}
-        minimumTrackTintColor="#ffaa00"  // 최소 트랙 색상
-        maximumTrackTintColor="#ddd"     // 최대 트랙 색상
-        thumbTintColor="#ffaa00" 
+        minimumTrackTintColor="#ffaa00"
+        maximumTrackTintColor="#ddd"
+        thumbTintColor="#ffaa00"
       />
 
       <Text style={styles.label}>장소</Text>
-      <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="장소 입력" />
+      <TextInput
+        style={styles.input}
+        value={location}
+        onChangeText={setLocation}
+        placeholder="장소 입력"
+      />
 
       <Text style={styles.label}>메뉴</Text>
-      <TextInput style={styles.input} value={menu} onChangeText={setMenu} placeholder="메뉴 입력" />
+      <TextInput
+        style={styles.input}
+        value={menu}
+        onChangeText={setMenu}
+        placeholder="메뉴 입력"
+      />
 
       <Text style={styles.label}>약속 시간</Text>
-      <TextInput style={styles.input} value={meetingTime} onChangeText={setMeetingTime} placeholder="약속 시간 입력 (예: 오후 3시)" />
+      <TextInput
+        style={styles.input}
+        value={meetingTime}
+        onChangeText={setMeetingTime}
+        placeholder="약속 시간 입력 (예: 오후 3시)"
+      />
 
       <TouchableOpacity style={styles.completeButton} onPress={handleCreateRoom}>
         <Text style={styles.completeButtonText}>완료</Text>
