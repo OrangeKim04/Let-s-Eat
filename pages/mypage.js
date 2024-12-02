@@ -1,33 +1,32 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-export default function MyPage({ navigation, route }) {
-  const [name, setName] = useState(nickname);
-  const {email='정보 없음', nickname='정보 없음'} = route.params || {};
-  console.log("route.params: ", route.params);
-  console.log("email: ", email);
+export default function MyPage({ navigation }) {
+  const [name, setName] = useState('홍길동');
+  const [email, setEmail] = useState('honggildong@example.com');
 
   const gotosettingpage = () => {
     navigation.navigate('SettingPage', {
       name,        // 현재 이름
       email,       // 현재 이메일
-      setName      // 이름 업데이트 함수
+      setName,     // 이름 업데이트 함수
+      setEmail,    // 이메일 업데이트 함수
     });
   };
 
   return (
     <View style={styles.container}>
-
+      {/* 고정된 기본 프로필 사진 */}
       <Image 
         source={require('../assets/default-profile.png')} 
         style={styles.profileImage} 
       />
       
       {/* 사용자 이름 */}
-      <Text style={styles.name}>{name}</Text>  
+      <Text style={styles.name}>{name}</Text>  {/* name 상태값 사용 */}
       
       {/* 사용자 이메일 */}
-      <Text style={styles.email}>{email}</Text>
+      <Text style={styles.email}>{email}</Text> {/* email 상태값 사용 */}
 
       {/* 설정 섹션 */}
       <View style={styles.settingsContainer}>
@@ -35,7 +34,7 @@ export default function MyPage({ navigation, route }) {
           style={styles.settingItem} 
           onPress={gotosettingpage}  // 설정 페이지로 이동
         >
-          <Text style={styles.settingText}>설정</Text> 
+          <Text style={styles.settingText}>설정</Text> {/* <Text>로 감싸기 */}
         </TouchableOpacity>
       </View>
     </View>
