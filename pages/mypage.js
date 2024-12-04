@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 export default function MyPage({ navigation, route }) {
   const [name, setName] = useState(nickname);
   const {email='정보 없음', nickname='정보 없음'} = route.params || {};
+  
   console.log("route.params: ", route.params);
   console.log("email: ", email);
 
@@ -14,7 +15,11 @@ export default function MyPage({ navigation, route }) {
       setName      // 이름 업데이트 함수
     });
   };
+  const gotoMyRoom = () => {
+    navigation.navigate('MyRoom');
+  };
 
+ 
   return (
     <View style={styles.container}>
 
@@ -38,6 +43,15 @@ export default function MyPage({ navigation, route }) {
           <Text style={styles.settingText}>설정</Text> 
         </TouchableOpacity>
       </View>
+      <View style={styles.settingsContainer}>
+        <TouchableOpacity 
+          style={styles.settingItem} 
+          onPress={gotoMyRoom}  // 설정 페이지로 이동
+        >
+          <Text style={styles.settingText}>내가 만든 방</Text> 
+        </TouchableOpacity>
+      </View>
+      
     </View>
   );
 }
@@ -78,5 +92,15 @@ const styles = StyleSheet.create({
   },
   settingText: {
     fontSize: 18,
+  },
+  reviewItems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+  },
+  image: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
   },
 });
